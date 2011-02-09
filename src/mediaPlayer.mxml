@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:net="flash.net.*" xmlns:media="flash.media.*" 
+	layout="absolute" width="560" height="446" cornerRadius="8" backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#F8FEFF, #000000]">
+   <mx:states>
+      <mx:State name="lister">
+         <mx:SetProperty name="width" value="800"/>
+         <mx:AddChild position="lastChild">
+            <mx:DataGrid x="567" y="18" height="394" width="206" id="playlist" dataProvider="{arrname}" >
+               <mx:columns>
+                  <mx:DataGridColumn headerText="Item" dataField="col2" />                  
+               </mx:columns>
+            </mx:DataGrid>
+         </mx:AddChild>
+         <mx:SetEventHandler target="{playList}" name="click" />
+         <mx:AddChild position="lastChild">
+            <mx:Button x="328" y="15" label="add to list" id="add" enabled="true" click="fileadd()" width="83"/>
+         </mx:AddChild>
+         <mx:AddChild position="lastChild">
+            <mx:Button x="419" y="15" label="prev" width="51" click="playprelist();" id="prevb"/>
+         </mx:AddChild>
+         <mx:AddChild position="lastChild">
+            <mx:Button x="478" y="15" label="next" id="nextb" click="playnextlist();"/>
+         </mx:AddChild>
+      </mx:State>
+   </mx:states>
+   
+   <mx:Number id="myPos">0</mx:Number> 
+   <mx:Number id="i">0</mx:Number>
+   <mx:Number id="div">0</mx:Number>   
+   <mx:Boolean id="isPlayingSound">false</mx:Boolean> 
+   <media:SoundChannel id="mySoundChannel"  /> 
+   <media:SoundTransform id = "myStrf"/>
+   <media:Sound id="mySound"  /> 
+   
+<mx:Script>
+	<![CDATA[
+		import flash.filesystem.File;
+		import flash.net.FileReference;
+		import flash.net.URLRequest; 
+		import mx.events.FileEvent;
+		import mx.managers.DragManager;
+		import flash.media.Sound;
+		import flash.media.SoundChannel;
+		import flash.media.SoundTransform;
+		import mx.collections.ArrayCollection;
+		
+		
+	    private var listfile:File = File.documentsDirectory;
+		private var file:File = File.documentsDirectory;
+		[Bindable] 
+        private var arrname:ArrayCollection = new ArrayCollection([{Item:'P'}]); 
+		[Bindable] 
+        private var arrurl:ArrayCollection = new ArrayCollection([{Item:'G'}]); 
+		[Bindable] 
+        private var arrtype:ArrayCollection = new ArrayCollection([{Item:'P'}]); 	
+        
+		private function ChangeVolume(evt:Event):void{ 
+			if(vtype == ".mp3")
+               { myStrf.volume = evt.target.value/100; 
+                mySoundChannel.soundTransform = myStrf; 
+               }
+               else
+               {
+               	disp.volume = evt.target.value/100;
+               }
+                
+            }
+	
+		private function fileOpen():void
+		{ 
+			file.browseForOpen("Select a file");
+			file.addEventListener(Event.SELECT,onSelect);
+		}
+		private function fileadd():void
+		{ 
+			listfile.browseForOpen("Select a file");
+			listfile.addEventListener(Event.SELECT,addtolist);
+		}
+		
+		
+		[Bindable]
+		private var vurl:String;
+		[Bindable]
+		private var surl:String;
+		[Bindable]
+		private var vname:String;
+		[Bindable]
+		private var vtype:String;
+		
+		private function addtolist(event:Event):void{
+	    arrname.addItem(listfile.name);
+	    arrurl.addItem(listfile.url);
+	    arrtype.addItem(listfile.type);
+	    
+	    playlist.dataProvider=arrname;								 
+		}
+		
+		
+		private function playnextlist():void{
+			if(i<arrname.length-1)
+			{i++;
+			 closer();	
+			vname = arrname[i];
+			vtype = arrtype[i];
+			 vol.addEventListener(Event.CHANGE, ChangeVolume); 
+			 playPause.label = "||"; 
+			if(vtype==".flv")
+				{
+                 vurl = arrurl[i];
+                 if(disp.playing)
+                 {}
+
+				}
+			else
+			if(vtype == ".mp3")
+			    {
+
+                myPos = 0;
+				mySoundChannel = new SoundChannel();
+				this.mySound=new Sound();
+
+				surl = arrurl[i];
+
+				mySound.load(new URLRequest(surl));
+				mySoundChannel = mySound.play(myPos,0,null);
+				isPlayingSound=true;	
+				}
+			}  
+		 
+		}
+		
+		private function playprelist():void{
+			if(i>0)
+			{i--;
+			closer();	
+			vname = arrname[i];
+			vtype = arrtype[i];
+			 vol.addEventListener(Event.CHANGE, ChangeVolume); 
+			 playPause.label = "||"; 
+			if(vtype==".flv")
+				{
+                 vurl = arrurl[i];
+                 if(disp.playing)
+                 {}
+
+				}
+			else
+			if(vtype == ".mp3")
+			    {
+
+                myPos = 0;
+				mySoundChannel = new SoundChannel();
+				this.mySound=new Sound();
+
+				surl = arrurl[i];
+
+				mySound.load(new URLRequest(surl));
+				mySoundChannel = mySound.play(myPos,0,null);
+				isPlayingSound=true;	
+				}
+			}  
+		 
+		}
+		
+		private function onSelect(event:Event):void{
+			
+			vname = file.name;
+			vtype = file.type;
+			 vol.addEventListener(Event.CHANGE, ChangeVolume); 
+			if(vtype==".flv")
+				{
+				if(isPlayingSound)
+                 {mySoundChannel.stop();
+                 isPlayingSound = false;
+                 }
+                 vurl = file.url;
+				 surl = null;
+				}
+			else
+			if(vtype == ".mp3")
+			    {
+			    if(isPlayingSound)
+                 {mySoundChannel.stop();
+                  isPlayingSound = false;
+                 }
+                 
+                 if(disp.playing)
+                 {disp.stop();
+                  vurl = null;
+                  disp.initialize();
+                }
+                 
+                myPos = 0;
+				mySoundChannel = new SoundChannel();
+				this.mySound=new Sound();
+
+				surl = file.url;
+
+				mySound.load(new URLRequest(surl));
+				mySoundChannel = mySound.play(myPos,0,null);
+				isPlayingSound=true;
+				
+				
+				}
+			   playPause.label = "||";   
+			   
+		}
+		
+		private function closer():void{
+			if(disp.playing)
+			{disp.stop();
+		     vurl = null;
+			}
+					
+			if(isPlayingSound)
+            {mySoundChannel.stop();
+             isPlayingSound=false;
+            }
+         
+			playPause.label = ">";
+     	}		
+     	
+     	private function toggleClick():void {
+               if(vurl!=null) 
+                {if (disp.playing) {
+                	disp.pause();
+                	playPause.label = '>';
+                	
+                } else 
+                	{
+                	disp.play();
+                	playPause.label = '||';
+                	}
+                }
+                
+                if(surl!=null)
+                	{if(isPlayingSound)
+                	  {
+                		myPos = mySoundChannel.position; 
+                		mySoundChannel.stop();	 
+                		playPause.label = '>';     
+                		isPlayingSound = false;          	
+                	  }
+                	else 
+                 	  {
+                		mySoundChannel = mySound.play(myPos, 0, null);
+                		playPause.label = '||';
+                		isPlayingSound = true;
+                	  }
+                	}
+                              	
+            }
+	
+	]]>
+</mx:Script>
+  
+    
+    
+	<mx:VideoDisplay x="30" y="45" width="500" height="317" id="disp" source="{vurl}" autoPlay="true" volume="{vol.value/100}"/>
+	<mx:Button x="30" y="15" label="browse" id="browsebut" click="fileOpen()"/>
+	<mx:Button x="110" y="390" label="Stop" id="stopb" click="closer()" color="#C6F5FF"/>
+	<mx:Button id="playPause" x ="30" y = "390" label="||"  click="toggleClick(); "  color="#C6F5FF"/>
+	<mx:Button id="playList" x ="260" y = "15" label="playlist"  click="currentState = &quot;lister&quot; ; div =200;"/>
+	<mx:HSlider x="30" y="370" width="496"  minimum="0" maximum="{disp.totalTime}" 
+		enabled="true" id="hslider" allowTrackClick="true" liveDragging="true" value="{disp.playheadTime}"/>
+	<mx:HSlider id ="vol" x="245" y="390" width="50" minimum="0" maximum="100" snapInterval="5" enabled="true" liveDragging="true" allowTrackClick="true"  />
+	<mx:Label id="time" x="303" y="390" text="{disp.playheadTime}/{disp.totalTime}" width="130" color="#C6F5FF"/>
+	<mx:Label id="urlname" x="120" y="15" text="{vname}" width="130"/>
+	<mx:Label id="voltext" x="190" y="390" text="Volume" width="47" color="#C6F5FF"/>
+	
+</mx:WindowedApplication>
